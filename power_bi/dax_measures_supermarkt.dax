@@ -1,0 +1,59 @@
+// ==============================================================================
+// POWER BI & DIRECT LAKE: EXPLICIT DAX MEASURES
+// Dataset: sm_supermarkt_sales
+// Mode: Direct Lake on Microsoft OneLake / Delta Parquet
+// Author: Alexander Fritzler
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// 1. BASE REVENUE & VOLUME MEASURES
+// ------------------------------------------------------------------------------
+
+Total_Umsatz = 
+SUM(fct_verkaeufe[Gesamtbetrag])
+
+Total_Menge = 
+SUM(fct_verkaeufe[Menge])
+
+Anzahl_Transaktionen = 
+DISTINCTCOUNT(fct_verkaeufe[EinkaufID])
+
+Durchschnittsbon = 
+DIVIDE([Total_Umsatz], [Anzahl_Transaktionen], 0)
+
+// ------------------------------------------------------------------------------
+// 2. TIME INTELLIGENCE & COMPARISONS (YoY / MoM)
+// ------------------------------------------------------------------------------
+
+Total_Umsatz_Vorjahr = 
+CALCULATE(
+    [Total_Umsatz],
+    SAMEPERIODLASTYEAR('dim_datum'[Datum])
+)
+
+Umsatz_YoY_Wachstum_Absolut = 
+[Total_Umsatz] - [Total_Umsatz_Vorjahr]
+
+Umsatz_YoY_Wachstum_Prozent = 
+DIVIDE(
+    [Umsatz_YoY_Wachstum_Absolut],
+    [Total_Umsatz_Vorjahr],
+    0
+)
+
+Umsatz_YTD = 
+TOTALYTD(
+    [Total_Umsatz],
+    'dim_datum'[Datum]
+)
+
+// ------------------------------------------------------------------------------
+// 3. PRODUCT & CATEGORY PERFORMANCE
+// ------------------------------------------------------------------------------
+
+Umsatz_Anteil_Gesamt = 
+DIVIDE(
+    [Total_Umsatz],
+    CALCULATE([Total_Umsatz], ALL(dim_produkte)),
+    0
+)
