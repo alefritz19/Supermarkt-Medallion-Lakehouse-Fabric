@@ -3,7 +3,7 @@
 
 [![Microsoft Fabric](https://img.shields.io/badge/Microsoft_Fabric-OneLake-0078D4?logo=microsoft)](https://learn.microsoft.com/fabric/)
 [![Apache Spark](https://img.shields.io/badge/PySpark-Delta_Lake-E25A1C?logo=apachespark)](https://spark.apache.org/)
-[![T-SQL](https://img.shields.io/badge/T--SQL-Synapse_Warehouse-CC292B?logo=microsoftsqlserver)](https://learn.microsoft.com/sql/t-sql/)
+[![T-SQL](https://img.shields.io/badge/T--SQL-Fabric_Warehouse-CC292B?logo=microsoftsqlserver)](https://learn.microsoft.com/fabric/data-warehouse/)
 [![Power BI](https://img.shields.io/badge/Power_BI-Direct_Lake-F2C811?logo=powerbi)](https://powerbi.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -80,7 +80,7 @@ flowchart TD
 - **Faktentabellen-Generierung:** Verknüpfung von Belegkopf und Positionen, Berechnung von Umsatzkennzahlen und automatisches Extrahieren von Datumsdimensionen (`Jahr`, `Monat`, `Wochentag`).
 - **Performance-Tuning:** Anwendung von `OPTIMIZE` mit multidimensionalem `Z-ORDER BY (EinkaufDatum, ProduktID)` für beschleunigtes File-Skipping bei analytischen Abfragen.
 
-### 2. Fabric Synapse Data Warehouse (T-SQL CTAS)
+### 2. Fabric Data Warehouse (T-SQL CTAS)
 *Datei:* [`sql_warehouse/warehouse_analytics_ctas_sp.sql`](sql_warehouse/warehouse_analytics_ctas_sp.sql)
 - **Cross-Database Abfragen:** Nahtlose SQL-Abfragen über den Lakehouse-Shortcut (`[lh_silver].[dbo].[fct_verkaeufe]`).
 - **CTAS (CREATE TABLE AS SELECT):** Performante Vorberechnung aggregierter Datamarts für schnelle Executive-Reports.
