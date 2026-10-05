@@ -116,6 +116,6 @@ flowchart TD
 
 **Alexander Fritzler**  
 *Data Analyst & Microsoft Fabric Data Engineer*  
-- 💼 LinkedIn: [Profil anzeigen](https://linkedin.com) *(Update via Profile README)*  
+- 💼 LinkedIn: [Alexander Fritzler | Profil anzeigen](https://www.linkedin.com/in/alexander-fritzler-214628356/)  
 - 🐙 GitHub: [@alefritz19](https://github.com/alefritz19)  
 - 📧 Kontakt: alefritz19@gmail.com
