@@ -11,9 +11,9 @@
 
 ## 📌 Übersicht & Geschäftskontext
 
-Dieses Repository beinhaltet die vollständige, produktionsreife Implementierung einer modernen **Cloud Data Platform** für den Einzelhandel (Supermarkt-Filialen & E-Commerce).
+Dieses Repository dokumentiert eine produktionsreife **Cloud Data Platform** für das fiktive deutsche Lebensmitteleinzelhandels-Unternehmen **FrischMarkt GmbH** (5 Filialen, 8 Warengruppen, 120 SKUs, ~755.000 Kassenbeleg-Positionen).
 
-Ziel ist es, transaktionale Kassensysteme und ERP-Daten über eine dreistufige **Medallion-Architektur (Bronze ➔ Silver ➔ Gold)** in **Microsoft Fabric** zu überführen, mittels **PySpark** und **Delta Lake** zu bereinigen und über **Power BI Direct Lake** ohne Duplikation oder ETL-Latenz für das Management bereitzustellen.
+Ziel der Plattform ist die Überwindung traditioneller ETL- und Import-Grenzen: Operative Kassendaten werden über eine dreistufige **Medallion-Architektur (Bronze ➔ Silver ➔ Gold)** in **Microsoft Fabric** überführt, mit **PySpark** und **Delta Lake** qualitätsgesichert und über **Power BI Direct Lake** ohne Duplikation oder Datenaktualisierungs-Latenz für das Management bereitgestellt.
 
 ---
 
@@ -22,27 +22,27 @@ Ziel ist es, transaktionale Kassensysteme und ERP-Daten über eine dreistufige *
 ```mermaid
 flowchart TD
     subgraph OnPrem["1. Operative Datenquellen"]
-        SQL["Microsoft SQL Server (SQLEXPRESS)\nTransaktionale Tabellen:\n- einkaeufe, einkauf_positionen\n- kunden, mitarbeiter, produkte, kategorien"]
+        SQL["Microsoft SQL Server / POS ERP (SupermarktDWH)\nTransaktionale Tabellen:\n- einkaeufe, einkauf_positionen\n- filialen, kunden, mitarbeiter, produkte, kategorien"]
     end
 
     subgraph FabricBronze["2. Ingestion & Bronze Layer (Raw)"]
-        GW["On-Premises Data Gateway / Data Factory\nCopy Activity Pipeline (cj_ingest_sql)"]
-        Bronze["Lakehouse: lh_bronze\nFormat: Delta Parquet (Raw Tabellen)\n- Unveränderte Rohdaten / Re-Ingest fähig"]
+        GW["Fabric Data Factory / Copy Activity\nInkrementeller Datenabzug (Append-Only)"]
+        Bronze["Lakehouse: lh_bronze\nFormat: Delta Parquet (Raw Tabellen)\n- Unveränderte Rohdaten\n- Vollständige Re-Ingest & Audit-Fähigkeit"]
     end
 
     subgraph FabricSilver["3. Transformation & Silver Layer (Curated)"]
-        NB["PySpark Notebook\nnb_bronze_to_silver_supermarkt\n- Schema-Validierung & Typkonvertierung\n- String Cleansing, Dedup & Coalesce\n- Sternschema-Modellierung (Star Schema)"]
-        Silver["Lakehouse: lh_silver (Delta Lake)\n- dim_kunden\n- dim_produkte (Denormalisiert)\n- dim_mitarbeiter\n- fct_verkaeufe\nOPTIMIZE & Z-ORDER (EinkaufDatum, ProduktID)"]
+        NB["PySpark Notebook\nnb_bronze_to_silver_supermarkt\n- Schema-Validierung & Typkonvertierung\n- String Cleansing, Dedup & Coalesce\n- Kimball Star Schema (dim_filialen, dim_produkte, dim_datum...)\n- V-Order & Z-ORDER Optimierung"]
+        Silver["Lakehouse: lh_silver (Delta Lake)\n- dim_filialen (5 Standorte)\n- dim_produkte (120 SKUs, denormalisiert)\n- dim_kunden (3.000 Treuekunden)\n- dim_mitarbeiter (40 Mitarbeiter)\n- dim_datum (Vollständiger Kalender)\n- fct_verkaeufe (~755.000 Positionen)"]
     end
 
     subgraph FabricGold["4. Serving & Gold Layer (Business Ready)"]
-        Gold["Lakehouse: lh_gold\nZero-Copy OneLake Schema Shortcuts\nVerknüpfung auf lh_silver.dbo\nSpeicherverbrauch: 0 MB!"]
-        WH["Fabric Data Warehouse: wh_analytics\nCross-Database T-SQL Analytics\n- CTAS: dbo.Kategorie_Umsatz_Summary\n- Stored Proc: dbo.usp_Refresh_Kategorie_Summary"]
+        Gold["Lakehouse: lh_gold\nZero-Copy OneLake Shortcuts\nVerknüpfung auf lh_silver.dbo\nSpeicherüberhang: 0 MB!"]
+        WH["Fabric Data Warehouse: wh_analytics\nCross-Database T-SQL Datamarts\n- CTAS: dbo.Kategorie_Umsatz_Summary\n- CTAS: dbo.Filiale_Performance_Summary\n- Stored Proc: dbo.usp_Refresh_Analytics_Datamarts"]
     end
 
     subgraph PowerBI["5. Business Intelligence & Direct Lake"]
-        SM["Direct Lake Semantikmodell: sm_supermarkt_sales\n- Direkter Zugriff auf Delta Parquet\n- Keine Import-Latenz, keine Aktualisierungsdauer"]
-        Report["Power BI Management Dashboard\n- KPI Scorecards (Umsatz, Menge, Bons)\n- Matrix mit Kategorie-Detail\n- Time Intelligence & YoY Wachstumsanalysen"]
+        SM["Direct Lake Semantikmodell: sm_supermarkt_sales\n- Liest Delta Parquet direkt im OneLake Speicher\n- Keine ETL-Latenz, keine Import-Größenlimits"]
+        Report["Power BI Management Dashboard\n- Executive KPI Cards (Umsatz, Marge, Bons)\n- Filial-Vergleich & MoM/YoY Analysen\n- Kategorie-Deckungsbeiträge"]
     end
 
     SQL --> GW --> Bronze
@@ -60,40 +60,55 @@ flowchart TD
 
 ```text
 ├── notebooks/
-│   └── nb_bronze_to_silver_supermarkt.py   # PySpark ETL: Cleansing, Star Schema & Delta Z-Order
+│   └── nb_bronze_to_silver_supermarkt.py   # PySpark ETL: Cleansing, Star Schema, Kalender & Delta Z-Order
 ├── sql_warehouse/
-│   └── warehouse_analytics_ctas_sp.sql     # Fabric Data Warehouse CTAS & Stored Procedures
+│   └── warehouse_analytics_ctas_sp.sql     # Fabric Data Warehouse CTAS & Stored Procedures (Cross-DB)
 ├── power_bi/
-│   └── dax_measures_supermarkt.dax         # Explizite DAX Measures (Time Intelligence, YoY, KPIs)
+│   └── dax_measures_supermarkt.dax         # Explizite DAX Measures (Time Intelligence, YoY, Filial-KPIs)
+├── .gitattributes                          # Linguist Language Mapping (TSQL, DAX, Python)
 ├── .gitignore
 └── README.md                               # Vollständige Dokumentation & Runbook
 ```
 
 ---
 
-## 🛠️ Technische Kernkomponenten
+## 🛠️ Technische Kernkomponenten & Deep Dives
 
 ### 1. PySpark & Delta Lake (Bronze ➔ Silver)
 *Datei:* [`notebooks/nb_bronze_to_silver_supermarkt.py`](notebooks/nb_bronze_to_silver_supermarkt.py)
-- **Denormalisierung:** Automatisches Auflösen von hierarchischen Kategorien in `dim_produkte` für das Sternschema.
-- **Datenhygiene:** Bereinigung von Leerzeichen (`trim`), Nullwert-Absicherung (`coalesce`) und deterministische Deduplizierung über Primärschlüssel.
-- **Faktentabellen-Generierung:** Verknüpfung von Belegkopf und Positionen, Berechnung von Umsatzkennzahlen und automatisches Extrahieren von Datumsdimensionen (`Jahr`, `Monat`, `Wochentag`).
-- **Performance-Tuning:** Anwendung von `OPTIMIZE` mit multidimensionalem `Z-ORDER BY (EinkaufDatum, ProduktID)` für beschleunigtes File-Skipping bei analytischen Abfragen.
+- **Denormalisierung & Star Schema:** Überführung flacher operativer Tabellen in ein analytisches Sternschema (`dim_filialen`, `dim_produkte`, `dim_kunden`, `dim_mitarbeiter`, `dim_datum`, `fct_verkaeufe`).
+- **Datenhygiene:** Standardisierung von Zeichenketten (`trim`), Nullwert-Absicherung (`coalesce`) und deterministische Deduplizierung über Primärschlüssel.
+- **Kalender-Generierung:** Automatische Erzeugung einer lückenlosen Datumstabelle (2024–2026) in PySpark für DAX Time-Intelligence-Funktionen in Direct Lake.
+- **Performance-Tuning:** Anwendung von `OPTIMIZE` mit multidimensionalem `Z-ORDER BY (EinkaufDatum, FilialeID, ProduktID)` für beschleunigtes File-Skipping bei analytischen Abfragen.
 
-### 2. Fabric Data Warehouse (T-SQL CTAS)
+### 2. Fabric Data Warehouse (Cross-Database T-SQL)
 *Datei:* [`sql_warehouse/warehouse_analytics_ctas_sp.sql`](sql_warehouse/warehouse_analytics_ctas_sp.sql)
-- **Cross-Database Abfragen:** Nahtlose SQL-Abfragen über den Lakehouse-Shortcut (`[lh_silver].[dbo].[fct_verkaeufe]`).
-- **CTAS (CREATE TABLE AS SELECT):** Performante Vorberechnung aggregierter Datamarts für schnelle Executive-Reports.
-- **Idempotente Stored Procedures:** Automatisiertes Leeren (`TRUNCATE`) und Wiederbefüllen via `dbo.usp_Refresh_Kategorie_Summary`.
+- **Zero-Copy Shortcuts:** Nahtloser SQL-Zugriff aus dem Warehouse `wh_analytics` auf den Lakehouse Delta Layer (`[lh_silver].[dbo].[fct_verkaeufe]`) ohne Datenverdopplung.
+- **CTAS (CREATE TABLE AS SELECT):** Vorberechnete Aggregations-Tabellen für Vorstandspräsentationen und Fachbereichsanalysen (`dbo.Kategorie_Umsatz_Summary`, `dbo.Filiale_Performance_Summary`).
+- **Idempotente Stored Procedures:** Automatisierte Aktualisierungsroutinen via `dbo.usp_Refresh_Analytics_Datamarts` für Pipeline-Orchestrierungen.
 
-### 3. Power BI Direct Lake & DAX
+### 3. Power BI Direct Lake & DAX Engine
 *Datei:* [`power_bi/dax_measures_supermarkt.dax`](power_bi/dax_measures_supermarkt.dax)
-- **Direct Lake Modus:** Direkte Abfrage der Delta Parquet Dateien in OneLake ohne herkömmlichen Datenimport und ohne DirectQuery-Performanceverluste.
-- **Explizite DAX Measures:**
+- **Direct Lake Modus:** Direkte Abfrage der Delta Parquet Dateien in OneLake ohne herkömmlichen Import und ohne DirectQuery-Performanceverluste.
+- **Explizite Kennzahlen:**
   - `Total_Umsatz = SUM(fct_verkaeufe[Gesamtbetrag])`
   - `Durchschnittsbon = DIVIDE([Total_Umsatz], [Anzahl_Transaktionen], 0)`
   - `Total_Umsatz_Vorjahr = CALCULATE([Total_Umsatz], SAMEPERIODLASTYEAR('dim_datum'[Datum]))`
-  - `Umsatz_YoY_Wachstum_% = DIVIDE([Umsatz_YoY_Wachstum_Absolut], [Total_Umsatz_Vorjahr], 0)`
+  - `Umsatz_YoY_Wachstum_Prozent = DIVIDE([Umsatz_YoY_Wachstum_Absolut], [Total_Umsatz_Vorjahr], 0)`
+
+---
+
+## 🧠 Architectural Insights (DP-700 & PL-300 Leitfaden)
+
+> [!NOTE]
+> **Warum Direct Lake statt DirectQuery oder Import?**  
+> Direct Lake lädt Parquet-Spaltendaten direkt aus OneLake in den VertiPaq-Hauptspeicher der Power BI Engine. Dadurch entfallen sowohl zeitaufwendige Scheduled Refreshes (Import) als auch die langsame SQL-Query-Translation (DirectQuery).
+
+> [!IMPORTANT]
+> **Fallback-Prävention (Direct Lake ➔ DirectQuery Fallback vermeiden):**  
+> 1. **V-Order aktiv halten:** Gewährleistet native VertiPaq-kompatible Kompression im Parquet-File.
+> 2. **Keine berechneten Spalten in DAX:** Alle Transformationen und Spalten werden upstream in PySpark oder SQL ausgeführt.
+> 3. **Kapazitätslimits überwachen:** Überschreitet die Modellgröße die Paging-Grenzen der Fabric-SKU, fällt Power BI automatisch auf DirectQuery zurück. Durch schlanke Datentypen (`INT`, `DECIMAL(10,2)`) und Z-Ordering bleibt das Modell dauerhaft im Direct Lake Modus.
 
 ---
 
@@ -102,8 +117,8 @@ flowchart TD
 1. **Workspace anlegen:** Microsoft Fabric Workspace mit Fabric- oder Trial-Kapazität erstellen (`DP700_Supermarkt_Practice`).
 2. **Lakehouses initialisieren:**
    - `lh_bronze`: Speicherort für unveränderte Rohdaten.
-   - `lh_silver`: Bereinigter Delta Lake Layer.
-   - `lh_gold`: Business-Layer (Zero-Copy Shortcuts auf `lh_silver`).
+   - `lh_silver`: Bereinigter Delta Lake Layer mit Star Schema.
+   - `lh_gold`: Business-Layer (Zero-Copy OneLake Shortcuts auf `lh_silver`).
 3. **Warehouse anlegen:** `wh_analytics` für T-SQL Serving und Cross-DB CTAS.
 4. **Notebook ausführen:** `notebooks/nb_bronze_to_silver_supermarkt.py` im Fabric-Arbeitsbereich importieren und ausführen.
 5. **Warehouse Skript deployen:** `sql_warehouse/warehouse_analytics_ctas_sp.sql` ausführen und Stored Procedure testen.
@@ -112,10 +127,10 @@ flowchart TD
 
 ---
 
-## 👤 Entwickler
+## 👤 Entwickler & Kontakt
 
 **Alexander Fritzler**  
-*Data Analyst & Microsoft Fabric Data Engineer*  
+*BI & Data Analyst | Analytics Engineer (Power BI · SQL · Microsoft Fabric)*  
 - 💼 LinkedIn: [Alexander Fritzler | Profil anzeigen](https://www.linkedin.com/in/alexander-fritzler-214628356/)  
 - 🐙 GitHub: [@alefritz19](https://github.com/alefritz19)  
 - 📧 Kontakt: alefritz19@gmail.com

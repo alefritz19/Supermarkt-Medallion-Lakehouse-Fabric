@@ -1,12 +1,12 @@
 -- ==============================================================================
--- FABRIC DATA WAREHOUSE: CROSS-DATABASE ANALYTICS & STORED PROCEDURE
--- Workspace: DP700_Supermarkt_Practice
+-- FABRIC DATA WAREHOUSE: CROSS-DATABASE ANALYTICS & STORED PROCEDURES
+-- Workspace: DP700_Supermarkt_Practice (FrischMarkt GmbH)
 -- Warehouse: wh_analytics
 -- Quelle: OneLake Lakehouse Shortcut / Cross-DB Query auf lh_silver
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
--- 1. CTAS (CREATE TABLE AS SELECT): Performante vorberechnete Aggregationstabelle
+-- 1. CTAS: Kategorie-Umsatz-Datamart (Vorberechnete Aggregationstabelle)
 -- ------------------------------------------------------------------------------
 IF OBJECT_ID('dbo.Kategorie_Umsatz_Summary', 'U') IS NOT NULL
     DROP TABLE dbo.Kategorie_Umsatz_Summary;
@@ -27,17 +27,39 @@ GROUP BY p.KategorieName, f.Jahr;
 GO
 
 -- ------------------------------------------------------------------------------
--- 2. STORED PROCEDURE: Automatisierte Aktualisierung der Datamart-Tabelle
+-- 2. CTAS: Filial-Performance Datamart (Standort-Vergleich inkl. Braunschweig)
 -- ------------------------------------------------------------------------------
-CREATE OR ALTER PROCEDURE dbo.usp_Refresh_Kategorie_Summary
+IF OBJECT_ID('dbo.Filiale_Performance_Summary', 'U') IS NOT NULL
+    DROP TABLE dbo.Filiale_Performance_Summary;
+GO
+
+CREATE TABLE dbo.Filiale_Performance_Summary AS
+SELECT 
+    fil.FilialName,
+    fil.Stadt,
+    f.Jahr,
+    COUNT(DISTINCT f.EinkaufID) AS AnzahlBons,
+    COUNT(f.PositionID) AS GesamtePositionen,
+    SUM(f.Menge) AS AbsatzMenge,
+    SUM(f.Gesamtbetrag) AS Bruttoumsatz,
+    ROUND(SUM(f.Gesamtbetrag) / NULLIF(COUNT(DISTINCT f.EinkaufID), 0), 2) AS Durchschnittsbon_EUR
+FROM [lh_silver].[dbo].[fct_verkaeufe] f
+LEFT JOIN [lh_silver].[dbo].[dim_filialen] fil 
+    ON f.FilialeID = fil.FilialeID
+GROUP BY fil.FilialName, fil.Stadt, f.Jahr;
+GO
+
+-- ------------------------------------------------------------------------------
+-- 3. STORED PROCEDURES: Idempotente Aktualisierung der Serving-Datamarts
+-- ------------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.usp_Refresh_Analytics_Datamarts
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    -- Bestehende Daten leeren (schnell und transaktionssicher)
+    -- 3.1. Kategorie Summary aktualisieren
     TRUNCATE TABLE dbo.Kategorie_Umsatz_Summary;
     
-    -- Neue aggregierte Kennzahlen aus dem Silver Delta Layer einfügen
     INSERT INTO dbo.Kategorie_Umsatz_Summary (
         KategorieName,
         Jahr,
@@ -49,30 +71,48 @@ BEGIN
     SELECT 
         p.KategorieName,
         f.Jahr,
-        COUNT(DISTINCT f.EinkaufID) AS AnzahlEinkaeufe,
-        SUM(f.Menge) AS Gesamtmenge,
-        SUM(f.Gesamtbetrag) AS Gesamtumsatz,
-        ROUND(AVG(f.Gesamtbetrag), 2) AS DurchschnittlicherUmsatzJePosten
+        COUNT(DISTINCT f.EinkaufID),
+        SUM(f.Menge),
+        SUM(f.Gesamtbetrag),
+        ROUND(AVG(f.Gesamtbetrag), 2)
     FROM [lh_silver].[dbo].[fct_verkaeufe] f
-    LEFT JOIN [lh_silver].[dbo].[dim_produkte] p 
-        ON f.ProduktID = p.ProduktID
+    LEFT JOIN [lh_silver].[dbo].[dim_produkte] p ON f.ProduktID = p.ProduktID
     GROUP BY p.KategorieName, f.Jahr;
+
+    -- 3.2. Filial Performance aktualisieren
+    TRUNCATE TABLE dbo.Filiale_Performance_Summary;
+
+    INSERT INTO dbo.Filiale_Performance_Summary (
+        FilialName,
+        Stadt,
+        Jahr,
+        AnzahlBons,
+        GesamtePositionen,
+        AbsatzMenge,
+        Bruttoumsatz,
+        Durchschnittsbon_EUR
+    )
+    SELECT 
+        fil.FilialName,
+        fil.Stadt,
+        f.Jahr,
+        COUNT(DISTINCT f.EinkaufID),
+        COUNT(f.PositionID),
+        SUM(f.Menge),
+        SUM(f.Gesamtbetrag),
+        ROUND(SUM(f.Gesamtbetrag) / NULLIF(COUNT(DISTINCT f.EinkaufID), 0), 2)
+    FROM [lh_silver].[dbo].[fct_verkaeufe] f
+    LEFT JOIN [lh_silver].[dbo].[dim_filialen] fil ON f.FilialeID = fil.FilialeID
+    GROUP BY fil.FilialName, fil.Stadt, f.Jahr;
 END;
 GO
 
 -- ------------------------------------------------------------------------------
--- 3. TESTLAUF DER PROZEDUR & ERGEBNISPRÜFUNG
+-- 4. TESTLAUF DER PROZEDUR & ERGEBNISPRÜFUNG
 -- ------------------------------------------------------------------------------
-EXEC dbo.usp_Refresh_Kategorie_Summary;
+EXEC dbo.usp_Refresh_Analytics_Datamarts;
 GO
 
-SELECT 
-    KategorieName,
-    Jahr,
-    AnzahlEinkaeufe,
-    Gesamtmenge,
-    Gesamtumsatz,
-    DurchschnittlicherUmsatzJePosten
-FROM dbo.Kategorie_Umsatz_Summary
-ORDER BY Gesamtumsatz DESC;
+SELECT * FROM dbo.Kategorie_Umsatz_Summary ORDER BY Gesamtumsatz DESC;
+SELECT * FROM dbo.Filiale_Performance_Summary ORDER BY Bruttoumsatz DESC;
 GO

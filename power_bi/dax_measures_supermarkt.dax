@@ -1,7 +1,7 @@
 // ==============================================================================
 // POWER BI & DIRECT LAKE: EXPLICIT DAX MEASURES
 // Dataset: sm_supermarkt_sales
-// Mode: Direct Lake on Microsoft OneLake / Delta Parquet
+// Mode: Direct Lake on Microsoft OneLake / Delta Parquet (FrischMarkt GmbH)
 // Author: Alexander Fritzler
 // ==============================================================================
 
@@ -20,6 +20,9 @@ DISTINCTCOUNT(fct_verkaeufe[EinkaufID])
 
 Durchschnittsbon = 
 DIVIDE([Total_Umsatz], [Anzahl_Transaktionen], 0)
+
+Artikel_pro_Bon = 
+DIVIDE([Total_Menge], [Anzahl_Transaktionen], 0)
 
 // ------------------------------------------------------------------------------
 // 2. TIME INTELLIGENCE & COMPARISONS (YoY / MoM)
@@ -47,6 +50,19 @@ TOTALYTD(
     'dim_datum'[Datum]
 )
 
+Umsatz_MoM_Vormonat = 
+CALCULATE(
+    [Total_Umsatz],
+    DATEADD('dim_datum'[Datum], -1, MONTH)
+)
+
+Umsatz_MoM_Wachstum_Prozent = 
+DIVIDE(
+    [Total_Umsatz] - [Umsatz_MoM_Vormonat],
+    [Umsatz_MoM_Vormonat],
+    0
+)
+
 // ------------------------------------------------------------------------------
 // 3. PRODUCT & CATEGORY PERFORMANCE
 // ------------------------------------------------------------------------------
@@ -55,5 +71,12 @@ Umsatz_Anteil_Gesamt =
 DIVIDE(
     [Total_Umsatz],
     CALCULATE([Total_Umsatz], ALL(dim_produkte)),
+    0
+)
+
+Umsatz_Anteil_Filiale = 
+DIVIDE(
+    [Total_Umsatz],
+    CALCULATE([Total_Umsatz], ALL(dim_filialen)),
     0
 )

@@ -1,0 +1,3 @@
+*.sql linguist-language=TSQL
+*.dax linguist-language=DAX
+*.py linguist-language=Python
