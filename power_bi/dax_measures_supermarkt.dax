@@ -21,12 +21,27 @@ DISTINCTCOUNT(fct_verkaeufe[EinkaufID])
 Durchschnittsbon = 
 DIVIDE([Total_Umsatz], [Anzahl_Transaktionen], 0)
 
+Durchschnittsbon_AOV = 
+DIVIDE([Total_Umsatz], [Anzahl_Transaktionen], 0)
+
 Artikel_pro_Bon = 
 DIVIDE([Total_Menge], [Anzahl_Transaktionen], 0)
+
+Total_Rohertrag = 
+SUM(fct_verkaeufe[Rohertrag])
+
+Rohertragsmarge_Pct = 
+DIVIDE([Total_Rohertrag], [Total_Umsatz], 0)
 
 // ------------------------------------------------------------------------------
 // 2. TIME INTELLIGENCE & COMPARISONS (YoY / MoM)
 // ------------------------------------------------------------------------------
+
+Umsatz_Vorjahr = 
+CALCULATE(
+    [Total_Umsatz],
+    SAMEPERIODLASTYEAR('dim_datum'[Datum])
+)
 
 Total_Umsatz_Vorjahr = 
 CALCULATE(
