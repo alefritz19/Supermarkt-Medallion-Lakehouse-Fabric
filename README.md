@@ -1,5 +1,5 @@
 # 🛒 Supermarkt Medallion Data Platform & Power BI Direct Lake
-### End-to-End Enterprise Lakehouse on Microsoft Fabric (DP-700 & PL-300)
+### End-to-End Lakehouse auf Microsoft Fabric (Portfolio-Projekt zur Vorbereitung auf DP-700 & PL-300)
 
 [![Microsoft Fabric](https://img.shields.io/badge/Microsoft_Fabric-OneLake-0078D4?logo=microsoft)](https://learn.microsoft.com/fabric/)
 [![Apache Spark](https://img.shields.io/badge/PySpark-Delta_Lake-E25A1C?logo=apachespark)](https://spark.apache.org/)
@@ -11,7 +11,7 @@
 
 ## 📌 Übersicht & Geschäftskontext
 
-Dieses Repository dokumentiert eine produktionsreife **Cloud Data Platform** für das fiktive deutsche Lebensmitteleinzelhandels-Unternehmen **FrischMarkt GmbH** (5 Filialen, 8 Warengruppen, 120 SKUs, ~755.000 Kassenbeleg-Positionen).
+Dieses Portfolio-Projekt dokumentiert eine End-to-End **Cloud-Datenplattform** für das fiktive deutsche Lebensmitteleinzelhandels-Unternehmen **FrischMarkt GmbH** (5 Filialen, 8 Warengruppen, 120 SKUs, ~755.000 Kassenbeleg-Positionen, synthetische Daten).
 
 Ziel der Plattform ist die Überwindung traditioneller ETL- und Import-Grenzen: Operative Kassendaten werden über eine dreistufige **Medallion-Architektur (Bronze ➔ Silver ➔ Gold)** in **Microsoft Fabric** überführt, mit **PySpark** und **Delta Lake** qualitätsgesichert und über **Power BI Direct Lake** ohne Duplikation oder Datenaktualisierungs-Latenz für das Management bereitgestellt.
 
@@ -130,7 +130,7 @@ flowchart TD
 ## 👤 Entwickler & Kontakt
 
 **Alexander Fritzler**  
-*BI & Data Analyst | Analytics Engineer (Power BI · SQL · Microsoft Fabric)*  
+*Junior Data Engineer (Microsoft Fabric · Snowflake · SQL Server · PySpark)*  
 - 💼 LinkedIn: [Alexander Fritzler | Profil anzeigen](https://www.linkedin.com/in/alexander-fritzler-214628356/)  
 - 🐙 GitHub: [@alefritz19](https://github.com/alefritz19)  
 - 📧 Kontakt: alefritz19@gmail.com
