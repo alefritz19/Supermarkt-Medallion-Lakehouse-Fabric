@@ -41,7 +41,7 @@ flowchart TD
     end
 
     subgraph PowerBI["5. Business Intelligence & Direct Lake"]
-        SM["Direct-Lake-Semantikmodell: sm_supermarkt_sales\n- Liest Delta Parquet direkt aus dem OneLake-Speicher\n- Keine ETL-Latenz, keine Import-Größenlimits"]
+        SM["Semantisches Modell (Direct Lake): sm_supermarkt_sales\n- Liest Delta Parquet direkt aus dem OneLake-Speicher\n- Keine ETL-Latenz, keine Import-Größenlimits"]
         Report["Power-BI-Management-Dashboard\n- KPI-Karten (Umsatz, Bons, Durchschnittsbon)\n- Filialvergleich & Vormonats-/Vorjahresanalysen\n- Umsatzanteile je Kategorie"]
     end
 
@@ -123,7 +123,7 @@ flowchart TD
 3. **Warehouse anlegen:** `wh_analytics` für T-SQL-Abfragen und datenbankübergreifendes CTAS.
 4. **Notebook ausführen:** `notebooks/nb_bronze_to_silver_supermarkt.py` im Fabric-Arbeitsbereich importieren und ausführen.
 5. **Warehouse-Skript bereitstellen:** `sql_warehouse/warehouse_analytics_ctas_sp.sql` ausführen und Stored Procedure testen.
-6. **Semantikmodell konfigurieren:** Neues Direct-Lake-Modell auf `lh_gold` erstellen und DAX-Measures hinterlegen.
+6. **Semantisches Modell konfigurieren:** Neues Direct-Lake-Modell auf `lh_gold` erstellen und DAX-Measures hinterlegen.
 7. **Dashboard bereitstellen:** Power-BI-Management-Dashboard mit KPI-Karten, Treemaps und Monatsvergleichen veröffentlichen.
 
 ---

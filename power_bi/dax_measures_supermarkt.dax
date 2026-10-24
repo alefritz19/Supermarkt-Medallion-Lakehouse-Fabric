@@ -1,6 +1,6 @@
 // ==============================================================================
 // POWER BI & DIRECT LAKE: EXPLIZITE DAX-MEASURES
-// Semantikmodell: sm_supermarkt_sales
+// Semantisches Modell: sm_supermarkt_sales
 // Modus: Direct Lake auf Microsoft OneLake / Delta Parquet (FrischMarkt GmbH)
 // Autor: Alexander Fritzler
 // ==============================================================================
