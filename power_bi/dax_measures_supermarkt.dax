@@ -27,12 +27,6 @@ DIVIDE([Total_Umsatz], [Anzahl_Transaktionen], 0)
 Artikel_pro_Bon = 
 DIVIDE([Total_Menge], [Anzahl_Transaktionen], 0)
 
-Total_Rohertrag = 
-SUM(fct_verkaeufe[Rohertrag])
-
-Rohertragsmarge_Pct = 
-DIVIDE([Total_Rohertrag], [Total_Umsatz], 0)
-
 // ------------------------------------------------------------------------------
 // 2. ZEITINTELLIGENZ & VERGLEICHE (VORJAHR / VORMONAT)
 // ------------------------------------------------------------------------------

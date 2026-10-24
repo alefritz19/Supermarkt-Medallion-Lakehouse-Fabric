@@ -42,7 +42,7 @@ flowchart TD
 
     subgraph PowerBI["5. Business Intelligence & Direct Lake"]
         SM["Direct-Lake-Semantikmodell: sm_supermarkt_sales\n- Liest Delta Parquet direkt aus dem OneLake-Speicher\n- Keine ETL-Latenz, keine Import-Größenlimits"]
-        Report["Power-BI-Management-Dashboard\n- KPI-Karten (Umsatz, Marge, Bons)\n- Filialvergleich & Vormonats-/Vorjahresanalysen\n- Deckungsbeiträge je Kategorie"]
+        Report["Power-BI-Management-Dashboard\n- KPI-Karten (Umsatz, Bons, Durchschnittsbon)\n- Filialvergleich & Vormonats-/Vorjahresanalysen\n- Umsatzanteile je Kategorie"]
     end
 
     SQL --> GW --> Bronze
