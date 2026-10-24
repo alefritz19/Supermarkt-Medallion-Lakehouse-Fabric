@@ -5,10 +5,18 @@
 # **Ziel:** Bereinigung der Bronze-Rohdaten und Überführung in ein optimiertes Sternschema (Delta Lake)
 
 # %%
+from itertools import chain
 from pyspark.sql.functions import (
     col, to_date, year, month, dayofweek, date_format, trim,
-    concat_ws, round, coalesce, lit, sequence, explode
+    concat_ws, round, coalesce, lit, sequence, explode, create_map
 )
+
+# Deutsche Wochentags- und Monatsnamen (date_format "EEEE"/"MMMM" liefert je nach Spark-Locale englische Namen)
+WOCHENTAGE = {1: "Sonntag", 2: "Montag", 3: "Dienstag", 4: "Mittwoch", 5: "Donnerstag", 6: "Freitag", 7: "Samstag"}
+MONATE = {1: "Januar", 2: "Februar", 3: "März", 4: "April", 5: "Mai", 6: "Juni",
+          7: "Juli", 8: "August", 9: "September", 10: "Oktober", 11: "November", 12: "Dezember"}
+map_wochentag = create_map([lit(x) for x in chain(*WOCHENTAGE.items())])
+map_monat = create_map([lit(x) for x in chain(*MONATE.items())])
 
 # V-Order explizit aktivieren: In neuen Fabric-Arbeitsbereichen ist V-Order standardmäßig deaktiviert,
 # wird aber für optimale Direct-Lake-Performance benötigt (Fabric Runtime 1.3+)
@@ -83,10 +91,10 @@ df_dim_datum = spark.sql(f"""
 """).withColumn("DatumKey", date_format(col("Datum"), "yyyyMMdd").cast("int")) \
     .withColumn("Jahr", year(col("Datum"))) \
     .withColumn("Monat", month(col("Datum"))) \
-    .withColumn("MonatName", date_format(col("Datum"), "MMMM")) \
+    .withColumn("MonatName", map_monat[month(col("Datum"))]) \
     .withColumn("MonatJahr", date_format(col("Datum"), "yyyy-MM")) \
     .withColumn("Quartal", concat_ws("", lit("Q"), date_format(col("Datum"), "q"))) \
-    .withColumn("Wochentag", date_format(col("Datum"), "EEEE")) \
+    .withColumn("Wochentag", map_wochentag[dayofweek(col("Datum"))]) \
     .withColumn("IstWochenende", dayofweek(col("Datum")).isin([1, 7]))  # 1 = Sonntag, 7 = Samstag (unabhängig von der Spark-Locale)
 
 # %% [markdown]
@@ -99,7 +107,7 @@ df_fct_verkaeufe = df_raw_positionen \
     .withColumn("DatumKey", date_format(col("EinkaufDatum"), "yyyyMMdd").cast("int")) \
     .withColumn("Jahr", year(col("EinkaufDatum"))) \
     .withColumn("Monat", month(col("EinkaufDatum"))) \
-    .withColumn("Wochentag", date_format(col("EinkaufDatum"), "EEEE")) \
+    .withColumn("Wochentag", map_wochentag[dayofweek(col("EinkaufDatum"))]) \
     .withColumn("Menge", col("Menge").cast("int")) \
     .withColumn("Einzelpreis", col("Einzelpreis").cast("decimal(10,2)")) \
     .withColumn("Gesamtbetrag", round(col("Menge") * col("Einzelpreis"), 2)) \

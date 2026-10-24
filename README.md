@@ -79,8 +79,8 @@ flowchart TD
 *Datei:* [`notebooks/nb_bronze_to_silver_supermarkt.py`](notebooks/nb_bronze_to_silver_supermarkt.py)
 - **Denormalisierung & Star Schema:** Überführung flacher operativer Tabellen in ein analytisches Sternschema (`dim_filialen`, `dim_produkte`, `dim_kunden`, `dim_mitarbeiter`, `dim_datum`, `fct_verkaeufe`).
 - **Datenhygiene:** Standardisierung von Zeichenketten (`trim`), Nullwert-Absicherung (`coalesce`) und deterministische Deduplizierung über Primärschlüssel.
-- **Kalender-Generierung:** Automatische Erzeugung einer lückenlosen Datumstabelle (2024–2026) in PySpark für DAX Time-Intelligence-Funktionen in Direct Lake.
-- **Performance-Tuning:** Anwendung von `OPTIMIZE` mit multidimensionalem `Z-ORDER BY (EinkaufDatum, FilialeID, ProduktID)` für beschleunigtes File-Skipping bei analytischen Abfragen.
+- **Kalender-Generierung:** Automatische Erzeugung einer lückenlosen Datumstabelle (2024–2026) mit deutschen Wochentags- und Monatsnamen in PySpark für DAX-Zeitintelligenzfunktionen in Direct Lake.
+- **Performance-Optimierung:** Anwendung von `OPTIMIZE` mit multidimensionalem `Z-ORDER BY (EinkaufDatum, FilialeID, ProduktID)` für beschleunigtes File-Skipping bei analytischen Abfragen.
 
 ### 2. Fabric Data Warehouse (Cross-Database T-SQL)
 *Datei:* [`sql_warehouse/warehouse_analytics_ctas_sp.sql`](sql_warehouse/warehouse_analytics_ctas_sp.sql)
