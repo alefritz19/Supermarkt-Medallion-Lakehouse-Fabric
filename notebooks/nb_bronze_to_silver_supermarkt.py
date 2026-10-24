@@ -1,6 +1,6 @@
 # %% [markdown]
-# # PySpark ETL: Bronze to Silver (Star Schema Transformation)
-# **Workspace:** DP700_Supermarkt_Practice
+# # PySpark-ETL: Bronze ➔ Silver (Transformation ins Sternschema)
+# **Arbeitsbereich:** DP700_Supermarkt_Practice
 # **Projekt:** Supermarkt Analytics & BI-Plattform (FrischMarkt GmbH)
 # **Ziel:** Bereinigung der Bronze-Rohdaten und Überführung in ein optimiertes Sternschema (Delta Lake)
 
@@ -23,7 +23,7 @@ map_monat = create_map([lit(x) for x in chain(*MONATE.items())])
 spark.conf.set("spark.sql.parquet.vorder.default", "true")
 
 # ---------------------------------------------------------
-# 1. BRONZE TABELLEN LADEN (OneLake Delta / Raw)
+# 1. BRONZE-TABELLEN LADEN (OneLake Delta / Rohdaten)
 # ---------------------------------------------------------
 print("Lade Rohdaten aus lh_bronze...")
 
@@ -36,7 +36,7 @@ df_raw_kategorien  = spark.read.table("lh_bronze.dbo.kategorien")
 df_raw_filialen    = spark.read.table("lh_bronze.dbo.filialen")
 
 # %% [markdown]
-# ## 2. Dimensionstabellen erstellen (Cleansing, Dedup & Star Schema)
+# ## 2. Dimensionstabellen erstellen (Bereinigung, Deduplizierung & Sternschema)
 
 # %%
 # Dim Filialen: 5 Standorte im FrischMarkt-Netzwerk
@@ -49,7 +49,7 @@ df_dim_filialen = df_raw_filialen \
     .select("FilialeID", "FilialName", "Stadt", "Bundesland") \
     .dropDuplicates(["FilialeID"])
 
-# Dim Kunden: Bereinigung, String-Trim und Namens-Zusammenführung
+# Dim Kunden: Bereinigung, Leerzeichen entfernen und Namen zusammenführen
 df_dim_kunden = df_raw_kunden \
     .filter(col("KundeID").isNotNull()) \
     .withColumn("KundeID", col("KundeID").cast("int")) \
@@ -61,7 +61,7 @@ df_dim_kunden = df_raw_kunden \
     .select("KundeID", "Vorname", "Nachname", "VollstaendigerName", "Stadt", "Geburtsdatum") \
     .dropDuplicates(["KundeID"])
 
-# Dim Produkte: Denormalisierung (Produkte + KategorieName für Star Schema)
+# Dim Produkte: Denormalisierung (Produkte + KategorieName für das Sternschema)
 df_dim_produkte = df_raw_produkte.alias("p") \
     .join(df_raw_kategorien.alias("k"), col("p.KategorieID") == col("k.KategorieID"), "left") \
     .select(
@@ -84,7 +84,7 @@ df_dim_mitarbeiter = df_raw_mitarbeiter \
     .select("MitarbeiterID", "MitarbeiterName", "Position", "Einstellungsdatum") \
     .dropDuplicates(["MitarbeiterID"])
 
-# Dim Datum: Vollständige Kalendertabelle für Time Intelligence & Direct Lake
+# Dim Datum: Vollständige Kalendertabelle für Zeitintelligenz & Direct Lake
 min_date, max_date = "2024-01-01", "2026-12-31"
 df_dim_datum = spark.sql(f"""
     SELECT explode(sequence(to_date('{min_date}'), to_date('{max_date}'), interval 1 day)) as Datum
@@ -129,7 +129,7 @@ df_fct_verkaeufe = df_raw_positionen \
     )
 
 # %% [markdown]
-# ## 4. In Silver als Delta Tabellen persistieren (V-Order aktiv)
+# ## 4. In Silver als Delta-Tabellen speichern (V-Order aktiv)
 
 # %%
 df_dim_filialen.write.format("delta").mode("overwrite").saveAsTable("lh_silver.dbo.dim_filialen")
@@ -139,10 +139,10 @@ df_dim_mitarbeiter.write.format("delta").mode("overwrite").saveAsTable("lh_silve
 df_dim_datum.write.format("delta").mode("overwrite").saveAsTable("lh_silver.dbo.dim_datum")
 df_fct_verkaeufe.write.format("delta").mode("overwrite").saveAsTable("lh_silver.dbo.fct_verkaeufe")
 
-print("Silver-Tabellen (Star Schema) erfolgreich als Delta Parquet geschrieben!")
+print("Silver-Tabellen (Sternschema) erfolgreich als Delta Parquet geschrieben!")
 
 # %% [markdown]
-# ## 5. Delta Lake Wartung: Z-Order & File-Skipping
+# ## 5. Delta-Lake-Wartung: Z-Order & File-Skipping
 
 # %%
 # Z-Order auf Datums- und Verbundspalten für maximale File-Skipping-Performance in Direct Lake

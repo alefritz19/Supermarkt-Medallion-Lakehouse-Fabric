@@ -1,8 +1,8 @@
 -- ==============================================================================
--- FABRIC DATA WAREHOUSE: CROSS-DATABASE ANALYTICS & STORED PROCEDURES
--- Workspace: DP700_Supermarkt_Practice (FrischMarkt GmbH)
+-- FABRIC DATA WAREHOUSE: DATENBANKÜBERGREIFENDE ANALYSEN & STORED PROCEDURES
+-- Arbeitsbereich: DP700_Supermarkt_Practice (FrischMarkt GmbH)
 -- Warehouse: wh_analytics
--- Quelle: OneLake Lakehouse Shortcut / Cross-DB Query auf lh_silver
+-- Quelle: OneLake-Lakehouse-Shortcut / datenbankübergreifende Abfrage auf lh_silver
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ GROUP BY p.KategorieName, f.Jahr;
 GO
 
 -- ------------------------------------------------------------------------------
--- 2. CTAS: Filial-Performance Datamart (Standort-Vergleich inkl. Braunschweig)
+-- 2. CTAS: Filial-Performance-Datamart (Standortvergleich inkl. Braunschweig)
 -- ------------------------------------------------------------------------------
 IF OBJECT_ID('dbo.Filiale_Performance_Summary', 'U') IS NOT NULL
     DROP TABLE dbo.Filiale_Performance_Summary;
@@ -50,7 +50,7 @@ GROUP BY fil.FilialName, fil.Stadt, f.Jahr;
 GO
 
 -- ------------------------------------------------------------------------------
--- 3. STORED PROCEDURES: Idempotente Aktualisierung der Serving-Datamarts
+-- 3. STORED PROCEDURES: Idempotente Aktualisierung der Datamarts
 -- ------------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_Refresh_Analytics_Datamarts
 AS

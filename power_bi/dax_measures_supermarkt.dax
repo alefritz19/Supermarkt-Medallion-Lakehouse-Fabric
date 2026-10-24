@@ -1,12 +1,12 @@
 // ==============================================================================
-// POWER BI & DIRECT LAKE: EXPLICIT DAX MEASURES
-// Dataset: sm_supermarkt_sales
-// Mode: Direct Lake on Microsoft OneLake / Delta Parquet (FrischMarkt GmbH)
-// Author: Alexander Fritzler
+// POWER BI & DIRECT LAKE: EXPLIZITE DAX-MEASURES
+// Semantikmodell: sm_supermarkt_sales
+// Modus: Direct Lake auf Microsoft OneLake / Delta Parquet (FrischMarkt GmbH)
+// Autor: Alexander Fritzler
 // ==============================================================================
 
 // ------------------------------------------------------------------------------
-// 1. BASE REVENUE & VOLUME MEASURES
+// 1. BASISKENNZAHLEN: UMSATZ & MENGE
 // ------------------------------------------------------------------------------
 
 Total_Umsatz = 
@@ -34,7 +34,7 @@ Rohertragsmarge_Pct =
 DIVIDE([Total_Rohertrag], [Total_Umsatz], 0)
 
 // ------------------------------------------------------------------------------
-// 2. TIME INTELLIGENCE & COMPARISONS (YoY / MoM)
+// 2. ZEITINTELLIGENZ & VERGLEICHE (VORJAHR / VORMONAT)
 // ------------------------------------------------------------------------------
 
 Umsatz_Vorjahr = 
@@ -79,7 +79,7 @@ DIVIDE(
 )
 
 // ------------------------------------------------------------------------------
-// 3. PRODUCT & CATEGORY PERFORMANCE
+// 3. UMSATZANTEILE NACH PRODUKT & FILIALE
 // ------------------------------------------------------------------------------
 
 Umsatz_Anteil_Gesamt = 
