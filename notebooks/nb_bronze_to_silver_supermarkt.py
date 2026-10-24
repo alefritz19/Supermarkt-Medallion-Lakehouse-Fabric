@@ -6,9 +6,13 @@
 
 # %%
 from pyspark.sql.functions import (
-    col, to_date, year, month, date_format, trim, 
+    col, to_date, year, month, dayofweek, date_format, trim,
     concat_ws, round, coalesce, lit, sequence, explode
 )
+
+# V-Order explizit aktivieren: In neuen Fabric-Arbeitsbereichen ist V-Order standardmäßig deaktiviert,
+# wird aber für optimale Direct-Lake-Performance benötigt (Fabric Runtime 1.3+)
+spark.conf.set("spark.sql.parquet.vorder.default", "true")
 
 # ---------------------------------------------------------
 # 1. BRONZE TABELLEN LADEN (OneLake Delta / Raw)
@@ -83,7 +87,7 @@ df_dim_datum = spark.sql(f"""
     .withColumn("MonatJahr", date_format(col("Datum"), "yyyy-MM")) \
     .withColumn("Quartal", concat_ws("", lit("Q"), date_format(col("Datum"), "q"))) \
     .withColumn("Wochentag", date_format(col("Datum"), "EEEE")) \
-    .withColumn("IstWochenende", col("Wochentag").isin(["Samstag", "Sonntag"]).cast("boolean"))
+    .withColumn("IstWochenende", dayofweek(col("Datum")).isin([1, 7]))  # 1 = Sonntag, 7 = Samstag (unabhängig von der Spark-Locale)
 
 # %% [markdown]
 # ## 3. Faktentabelle erstellen (Einkaufskopf + Positionen)
@@ -133,9 +137,12 @@ print("Silver-Tabellen (Star Schema) erfolgreich als Delta Parquet geschrieben!"
 # ## 5. Delta Lake Wartung: Z-Order & File-Skipping
 
 # %%
-# %%sql
-# -- Z-Order auf Datums- und Verbundspalten für maximale File-Skipping-Performance in Direct Lake
-# OPTIMIZE lh_silver.dbo.fct_verkaeufe ZORDER BY (EinkaufDatum, FilialeID, ProduktID);
+# Z-Order auf Datums- und Verbundspalten für maximale File-Skipping-Performance in Direct Lake
+spark.sql("""
+    OPTIMIZE lh_silver.dbo.fct_verkaeufe
+    ZORDER BY (EinkaufDatum, FilialeID, ProduktID)
+    VORDER
+""")
 
-# -- Versionskontrolle & Delta Transaktionslog prüfen
-# DESCRIBE HISTORY lh_silver.dbo.fct_verkaeufe;
+# Versionskontrolle & Delta-Transaktionslog prüfen
+display(spark.sql("DESCRIBE HISTORY lh_silver.dbo.fct_verkaeufe"))

@@ -26,7 +26,7 @@ flowchart TD
     end
 
     subgraph FabricBronze["2. Ingestion & Bronze Layer (Raw)"]
-        GW["Fabric Data Factory / Copy Activity\nInkrementeller Datenabzug (Append-Only)"]
+        GW["Fabric Data Factory / Copy Activity\nDatenübernahme aus SQL Server"]
         Bronze["Lakehouse: lh_bronze\nFormat: Delta Parquet (Raw Tabellen)\n- Unveränderte Rohdaten\n- Vollständige Re-Ingest & Audit-Fähigkeit"]
     end
 
@@ -67,6 +67,7 @@ flowchart TD
 │   └── dax_measures_supermarkt.dax         # Explizite DAX Measures (Time Intelligence, YoY, Filial-KPIs)
 ├── .gitattributes                          # Linguist Language Mapping (TSQL, DAX, Python)
 ├── .gitignore
+├── LICENSE                                 # MIT-Lizenz
 └── README.md                               # Vollständige Dokumentation & Runbook
 ```
 
